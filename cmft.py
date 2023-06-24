@@ -15,7 +15,6 @@ from module import LCMFTNGenerator, EI, VGGDiscriminator
 from utils import weights_init_normal
 from utils import LambdaLR
 
-
 from tqdm import tqdm
 
 DEVICE = 0
