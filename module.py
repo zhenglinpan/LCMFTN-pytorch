@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.autograd.variable as Variable
-
+from torchvision.models import vgg19
 
 class LCMFTNGenerator(nn.Module):
     def __init__(self, args, Sn, Sp, Cp):
@@ -228,3 +228,19 @@ class EI(nn.Module):
         
     def forward(self, x):
         return self.model(x)
+
+
+class VGGDiscriminator(nn.Module):
+    def __init__(self) :
+        super(VGGDiscriminator, self).__init__()
+        self.index = [0, 2, 5, 10, 14]
+        features = list(vgg19(weights='DEFAULT').features)[:15] # print(vgg19(weights='DEFAULT'))
+        self.features = nn.ModuleList(features).eval()
+        
+    def forward(self, x):
+        xs = []
+        for i, layer in enumerate(self.features):
+            x = layer(x)
+            if i in self.index:
+                xs.append(layer(x))
+        return xs

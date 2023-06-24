@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 
 import torch
-import torchvision.models as models
+
 import torchvision.transforms as transforms
 from torchvision.utils import save_image
 from torch.autograd import Variable
@@ -11,9 +11,9 @@ from args import args
 from dataset import AnimeDataset
 from torch.utils.data import DataLoader
 
-from module import LCMFTNGenerator, EI
+from module import LCMFTNGenerator, EI, VGGDiscriminator
 from utils import weights_init_normal
-from utils import LambdaLR, PerceptualLoss
+from utils import LambdaLR
 
 
 from tqdm import tqdm
@@ -22,14 +22,15 @@ DEVICE = 0
 
 generator = LCMFTNGenerator().to(DEVICE)
 feature_extractor = EI().to(DEVICE)
-discriminator_vgg = models.vgg19(pretrained=True)
+discriminator = VGGDiscriminator().to(DEVICE)
 
 feature_extractor.eval()
-discriminator_vgg.eval()
+discriminator.eval()
 
 generator.apply(weights_init_normal)
 
 criterion_color = torch.nn.L1Loss()
+criterion_MSE = torch.nn.MSELoss()
 
 optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr, betas=(0.5, 0.999))
 lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(optimizer_G, lr_lambda=LambdaLR(args.end_epochs, args.start_epoch, args.decay_epoch).step)
@@ -54,7 +55,12 @@ for epoch in tqdm(range(args.start_epoch, args.end_epoch)):
         pred_Cn = LCMFTNGenerator(args, Sn, Sp, Cp)
         
         color_loss = criterion_color(Cn, pred_Cn)
-        perceptual_loss = None
+        
+        fms_real = discriminator(Cn)
+        fms_fake = discriminator(pred_Cn)
+        perceptual_loss = criterion_MSE(fms_real[0], fms_fake[0])
+        for i in range(1, len(fms_real)):
+            perceptual_loss += criterion_MSE(fms_real[i], fms_fake[i])
         
         loss = color_loss + perceptual_loss
         
