@@ -37,7 +37,9 @@ lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(optimizer_G, lr_lambda=Lambda
 Tensor = torch.cuda.FloatTensor
 Input = Tensor(args.batch_size, args.in_channel, args.input_height, args.input_width)
 
-train_dataset = AnimeDataset(args)
+trans = [transforms.Resize(256, 256),
+         transforms.ToTensor()]
+train_dataset = AnimeDataset(args, trans=trans)
 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.n_cpu)
 print("Data Loaded====================>")
 

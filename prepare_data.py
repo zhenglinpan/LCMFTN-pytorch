@@ -72,6 +72,9 @@ def prepare_data(args, stride=0, width=0):
             video.release()
     
     def convert():
+        '''
+        https://huggingface.co/lllyasviel/control_v11p_sd15_lineart
+        '''
         processor = LineartDetector.from_pretrained("./models/lineart_anime")
         
         for root, dirs, files in os.walk('./dataset'):
@@ -87,14 +90,21 @@ def prepare_data(args, stride=0, width=0):
     def pairing(args, stride=1, width=2):
         for root, dirs, files in os.walk('./dataset'):
             if len(files) > 0 and files[0].endswith('jpg'):
+                if 'pairs.h5' in files: 
+                    files.remove('pairs.h5')
+                
                 C_images = []
                 S_images = []
+
+                files = sorted(files, key=lambda f: int(f.strip('.jpg').split('-')[-1]))
                 for file in files:
-                    if file.startswith('3-'):
-                        C_images.append(cv2.resize(cv2.imread(os.path.join(root, file)), (256, 256)))
-                    elif file.startswith('1-'):
-                        S_images.append(cv2.resize(cv2.imread(os.path.join(root, file), cv2.IMREAD_GRAYSCALE), (256, 256)))
+                    if file.endswith('jpg'):
+                        if file.startswith('3-'):
+                            C_images.append(cv2.imread(os.path.join(root, file)))
+                        elif file.startswith('1-'):
+                            S_images.append(cv2.imread(os.path.join(root, file), cv2.IMREAD_GRAYSCALE))
                 assert len(C_images) == len(S_images)
+                print(files)
                 
                 frame_pairs = []
                 assert width <= len(C_images)
@@ -107,13 +117,14 @@ def prepare_data(args, stride=0, width=0):
 
                 with h5py.File(os.path.join(root, 'pairs.h5'), 'w') as hf:
                     for i, pair in enumerate(frame_pairs):
+                        hf.create_dataset('n', data=len(frame_pairs))
                         hf.create_dataset(f'{i}', data=pair)
                     
             
-    print("Extracting frames======================>")
-    extract_frames(args)
-    print("Converting======================>")
-    convert()
+    # print("Extracting frames======================>")
+    # extract_frames(args)
+    # print("Converting======================>")
+    # convert()
     print("Paring======================>")
     pairing(args)
     print("All Done!======================>")
