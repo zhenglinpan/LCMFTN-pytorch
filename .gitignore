@@ -1,3 +1,10 @@
 *.jpg
+*.h5
+*.mp4
+
+test.ipynb
 
 wandb
+models
+
+__pycache__
