@@ -7,7 +7,6 @@ import torchvision.transforms as transforms
 from torchvision.utils import save_image
 from torch.autograd import Variable
 
-
 from args import args
 from dataset import AnimeDataset
 from torch.utils.data import DataLoader
@@ -47,7 +46,7 @@ train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=Tru
 print("Data Loaded====================>")
 
 ###### Training ######
-for epoch in tqdm(range(args.start_epoch, args.end_epoch)):
+for epoch in tqdm(range(args.start_epoch, args.end_epoch + 1)):
     for i, batch in enumerate(train_loader):
         Sn = Variable(Input_S.copy_(batch['Sn'])).to(DEVICE)
         Sp = Variable(Input_S.copy_(batch['Sp'])).to(DEVICE)
