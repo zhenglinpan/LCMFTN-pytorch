@@ -4,8 +4,8 @@ import torch.autograd.variable as Variable
 from torchvision.models import vgg19
 
 class LCMFTNGenerator(nn.Module):
-    def __init__(self, args, Sn, Sp, Cp):
-        super(CMFT, self).__init__()
+    def __init__(self, args):
+        super(LCMFTNGenerator, self).__init__()
         self.Eh = Eh(args.s_channel)
         self.Ec = Ec(args.c_channel)
         self.Es = Es(args.s_channel)
@@ -48,7 +48,7 @@ class RU(nn.Module):
         self.nc_in = nc_in
         self.nc_out = nc_out
         
-        model = [ResNeXtBlock(nc_in, nc_in) for _ in range(res_n)] + ESPCN(nc_in, nc_out)
+        model = [ResNeXtBlock(nc_in, nc_in) for _ in range(res_n)] + [ESPCN(nc_in, nc_out)]
         self.model = nn.Sequential(*model)
     
     def forward(self, x):        
@@ -60,15 +60,16 @@ class ResNeXtBlock(nn.Module):
     Alternative: https://github.com/prlz77/ResNeXt.pytorch/blob/master/models/model.py
     """
     def __init__(self, nc_in, nc_out, cardinality=32):
-        super().__init__(ResNeXtBlock)
+        super(ResNeXtBlock, self).__init__()
         
-        nc_hidden = nc_in // 16
+        nc_hidden = 32
+        # nc_hidden = nc_in // 2
         self.conv_in = nn.Sequential(nn.Conv2d(nc_in, nc_hidden, 1),
                                      nn.BatchNorm2d(nc_hidden),
                                      nn.ReLU(1))
         self.bottleneck = nn.Sequential(nn.Conv2d(nc_hidden, nc_hidden, 3, 1, 1, groups=cardinality))
-        self.conv_out = nn.Conv2d(nn.Conv2d(nc_hidden, nc_out, 1),
-                                  nn.BatchNorm2d(nc_out))
+        self.conv_out = nn.Sequential(nn.Conv2d(nc_hidden, nc_out, 1),
+                                      nn.BatchNorm2d(nc_out))
         
     def forward(self, x):
         x1 = self.conv_in(x)
@@ -147,7 +148,7 @@ class Eh(nn.Module):
 
 class Ec(nn.Module):
     def __init__(self, nc_in):
-        super(Eh).__init__()
+        super(Ec, self).__init__()
         self.nc_in = nc_in
         
         self.conv1 = nn.Sequential(nn.Conv2d(self.nc_in, 64, 7, 1, 3), 
@@ -173,7 +174,7 @@ class Ec(nn.Module):
 
 class Es(nn.Module):
     def __init__(self, nc_in):
-        super(Eh).__init__()
+        super(Es, self).__init__()
         self.nc_in = nc_in
         
         self.conv1 = nn.Sequential(nn.Conv2d(self.nc_in, 64, 7, 1, 3), 
@@ -208,7 +209,7 @@ class EI(nn.Module):
     ### should be Illustration2Vet Network
     ### Use Conv for substitue
     def __init__(self, nc_in):
-        super(Eh).__init__()
+        super(EI, self).__init__()
         self.nc_in = nc_in
         
         model = [nn.Conv2d(self.nc_in, 64, 7, 1, 3),

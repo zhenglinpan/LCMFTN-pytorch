@@ -109,16 +109,20 @@ def prepare_data(args, stride=0, width=0):
                 frame_pairs = []
                 assert width <= len(C_images)
                 for frame_count in range(width - 1, len(C_images), stride):
-                    pairs = {'Sn':None, 'Sp': None, 'Cn': None, 'Cp': None}
-                    pairs['Cp'] = C_images[frame_count - width + 1]
-                    pairs['Sp'] = S_images[frame_count - width + 1]
-                    pairs['Cn'] = C_images[frame_count]
-                    pairs['Sn'] = S_images[frame_count]
-
+                    pair = {'Sn':None, 'Sp': None, 'Cn': None, 'Cp': None}
+                    pair['Cp'] = C_images[frame_count - width + 1]
+                    pair['Sp'] = S_images[frame_count - width + 1][:, :, None]
+                    pair['Cn'] = C_images[frame_count]
+                    pair['Sn'] = S_images[frame_count][:, :, None]
+                    frame_pairs.append(pair)
+                    
+                print(len(frame_pairs))
                 with h5py.File(os.path.join(root, 'pairs.h5'), 'w') as hf:
                     for i, pair in enumerate(frame_pairs):
-                        hf.create_dataset('n', data=len(frame_pairs))
-                        hf.create_dataset(f'{i}', data=pair)
+                        hf.create_dataset(f'{i}_Cp', data=pair['Cp'])
+                        hf.create_dataset(f'{i}_Sp', data=pair['Sp'])
+                        hf.create_dataset(f'{i}_Cn', data=pair['Cn'])
+                        hf.create_dataset(f'{i}_Sn', data=pair['Sn'])
                     
             
     # print("Extracting frames======================>")

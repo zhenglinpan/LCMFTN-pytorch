@@ -19,8 +19,8 @@ from tqdm import tqdm
 
 DEVICE = 0
 
-generator = LCMFTNGenerator().to(DEVICE)
-feature_extractor = EI().to(DEVICE)
+generator = LCMFTNGenerator(args).to(DEVICE)
+feature_extractor = EI(nc_in=1).to(DEVICE)
 discriminator = VGGDiscriminator().to(DEVICE)
 
 feature_extractor.eval()
@@ -32,12 +32,14 @@ criterion_color = torch.nn.L1Loss()
 criterion_MSE = torch.nn.MSELoss()
 
 optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr, betas=(0.5, 0.999))
-lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(optimizer_G, lr_lambda=LambdaLR(args.end_epochs, args.start_epoch, args.decay_epoch).step)
+lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(optimizer_G, lr_lambda=LambdaLR(args.end_epoch, args.start_epoch, args.decay_epoch).step)
 
 Tensor = torch.cuda.FloatTensor
-Input = Tensor(args.batch_size, args.in_channel, args.input_height, args.input_width)
+Input_C = Tensor(args.batch_size, args.c_channel, args.input_height, args.input_width)
+Input_S = Tensor(args.batch_size, args.s_channel, args.input_height, args.input_width)
 
-trans = [transforms.Resize(256, 256),
+trans = [transforms.ToPILImage(),
+         transforms.Resize(size=(args.input_height, args.input_width), interpolation=transforms.InterpolationMode.BICUBIC),
          transforms.ToTensor()]
 train_dataset = AnimeDataset(args, trans=trans)
 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.n_cpu)
@@ -46,14 +48,15 @@ print("Data Loaded====================>")
 ###### Training ######
 for epoch in tqdm(range(args.start_epoch, args.end_epoch)):
     for i, batch in enumerate(train_loader):
-        Sn = Variable(Input.copy_(batch['Sn'])).to(DEVICE)
-        Sp = Variable(Input.copy_(batch['Sp'])).to(DEVICE)
-        Cn = Variable(Input.copy_(batch['Cn'])).to(DEVICE)
-        Cp = Variable(Input.copy_(batch['Cp'])).to(DEVICE)
+        Sn = Variable(Input_S.copy_(batch['Sn'])).to(DEVICE)
+        Sp = Variable(Input_S.copy_(batch['Sp'])).to(DEVICE)
+        Cn = Variable(Input_C.copy_(batch['Cn'])).to(DEVICE)
+        Cp = Variable(Input_C.copy_(batch['Cp'])).to(DEVICE)
         
         optimizer_G.zero_grad()
         
-        pred_Cn = LCMFTNGenerator(args, Sn, Sp, Cp)
+        pred_Cn = LCMFTNGenerator(args)
+        print(pred_Cn.shape)
         
         color_loss = criterion_color(Cn, pred_Cn)
         
