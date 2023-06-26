@@ -7,6 +7,7 @@ import torchvision.transforms as transforms
 from torchvision.utils import save_image
 from torch.autograd import Variable
 
+
 from args import args
 from dataset import AnimeDataset
 from torch.utils.data import DataLoader
@@ -55,8 +56,10 @@ for epoch in tqdm(range(args.start_epoch, args.end_epoch)):
         
         optimizer_G.zero_grad()
         
-        pred_Cn = LCMFTNGenerator(args)
-        print(pred_Cn.shape)
+        EIp = feature_extractor(Sp)
+        EIn = feature_extractor(Sn)
+        
+        pred_Cn = generator(Sn, Sp, Cp, EIp.detach(), EIn.detach())
         
         color_loss = criterion_color(Cn, pred_Cn)
         
@@ -81,4 +84,4 @@ for epoch in tqdm(range(args.start_epoch, args.end_epoch)):
         save_image(pred_Cn, os.path.join('./results/train', str(epoch) + 'pred_Cn.jpg'))
 
     if epoch % 10 == 0:
-        torch.save(LCMFTNGenerator.state_dict(), args.models_root + '/' + str(epoch) + 'generator.pth')
+        torch.save(generator.state_dict(), args.models_root + '/' + str(epoch) + '_generator.pth')
