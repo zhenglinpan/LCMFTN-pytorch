@@ -2,7 +2,6 @@ import os, sys
 import numpy as np
 
 import torch
-
 import torchvision.transforms as transforms
 from torchvision.utils import save_image
 from torch.autograd import Variable
@@ -16,6 +15,9 @@ from utils import weights_init_normal
 from utils import LambdaLR
 
 from tqdm import tqdm
+
+import wandb
+wandb.init(project="LCMFTN")
 
 DEVICE = 0
 
@@ -69,6 +71,8 @@ for epoch in tqdm(range(args.start_epoch, args.end_epoch + 1)):
             perceptual_loss += criterion_MSE(fms_real[i], fms_fake[i])
         
         loss = color_loss + perceptual_loss
+        
+        wandb.log({"color_loss": color_loss.item(), "perceptual_loss": loss.item()})
         
         loss.backward()
         optimizer_G.step()

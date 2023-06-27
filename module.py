@@ -111,9 +111,9 @@ class ESPCN(nn.Module):
         self.upscale_factor = upscale_factor
         
         conv = [nn.Conv2d(self.nc_in, 64, 5, 1, 2),
-                nn.Tanh(),
+                nn.ReLU(1),
                 nn.Conv2d(64, 32, 3, 1, 1),
-                nn.Tanh()]
+                nn.ReLU(1)]
         
         subpixel_conv = [nn.Conv2d(32, int(self.nc_out * (self.upscale_factor ** 2)), 3, 1, 1),
                          nn.ReLU(1),
@@ -235,14 +235,14 @@ class EI(nn.Module):
         self.nc_in = nc_in
         
         model = [nn.Conv2d(self.nc_in, 64, 7, 1, 3),
-                 nn.InstanceNorm2d(64),
+                 nn.BatchNorm2d(64),
                  nn.ReLU(1)]
         
         in_features = 64
         out_features = in_features * 2
         for _ in range(3):
             model += [nn.Conv2d(in_features, out_features, 4, 2, 1),
-                      nn.InstanceNorm2d(out_features),
+                      nn.BatchNorm2d(out_features),
                       nn.LeakyReLU(0.2, 1)]
             in_features = out_features
             out_features = in_features * 2

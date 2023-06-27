@@ -8,6 +8,7 @@ from huggingface_hub import HfApi
 from pathlib import Path
 import numpy as np
 from controlnet_aux import LineartDetector
+from matplotlib import pyplot as plt
 
 from diffusers import (
     ControlNetModel,
