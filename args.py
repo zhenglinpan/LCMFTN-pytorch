@@ -5,6 +5,7 @@ parser = argparse.ArgumentParser()
 # dataset setting
 parser.add_argument("--video_dir", type=str, default='./dataset')
 parser.add_argument("--video_root", type=str, default='./dataset/video')
+parser.add_argument("--shots_root", type=str, default='./dataset/shots')
 parser.add_argument("--dataset_root", type=str, default='./dataset')
 parser.add_argument("--models_root", type=str, default='./models')
 
@@ -20,4 +21,4 @@ parser.add_argument("--s_channel", type=float, default=1)
 parser.add_argument("--c_channel", type=float, default=3)
 parser.add_argument("--n_cpu", type=float, default=4)
 args = parser.parse_args()
-print(args)
+# print(args)

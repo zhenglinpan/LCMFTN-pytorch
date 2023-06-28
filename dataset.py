@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 import h5py
 
+from glob import glob
+
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 
@@ -12,16 +14,15 @@ class AnimeDataset(Dataset):
         self.trans = transforms.Compose(trans)
         
         pairs = []
-        folders = os.listdir('./dataset')
-        for folder in folders:
-            if folder.startswith('shot'):
-                h5file = os.path.join('./dataset', folder, 'pairs.h5')
-                with h5py.File(h5file, 'r') as hf:
-                    for i in range(len(list(hf.keys())) // 4):
-                        pairs.append({'Sn': np.array(hf[f'{i}_Sn']).astype(np.uint8), 
-                                      'Sp': np.array(hf[f'{i}_Sp']).astype(np.uint8), 
-                                      'Cn': np.array(hf[f'{i}_Cn']).astype(np.uint8)[..., [2,1,0]],     # transpose since opencv used
-                                      'Cp': np.array(hf[f'{i}_Cp']).astype(np.uint8)[..., [2,1,0]]})
+        h5_root = os.path.join(args.dataset_root, 'h5')
+        h5_files = glob(h5_root + '/*.h5')
+        for h5_f in h5_files:
+            with h5py.File(h5_f, 'r') as hf:
+                for i in range(len(list(hf.keys())) // 4):
+                    pairs.append({'Sn': np.array(hf[f'{i}_Sn']).astype(np.uint8), 
+                                  'Sp': np.array(hf[f'{i}_Sp']).astype(np.uint8), 
+                                  'Cn': np.array(hf[f'{i}_Cn']).astype(np.uint8)[[2,1,0], ...], # RGB-BGR since opencv used
+                                  'Cp': np.array(hf[f'{i}_Cp']).astype(np.uint8)[[2,1,0], ...]})
 
         print(f'{len(pairs)} pairs founded.')
         self.pairs = pairs

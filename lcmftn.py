@@ -55,6 +55,18 @@ for epoch in tqdm(range(args.start_epoch, args.end_epoch + 1)):
         Cn = Variable(Input_C.copy_(batch['Cn'])).to(DEVICE)
         Cp = Variable(Input_C.copy_(batch['Cp'])).to(DEVICE)
         
+        print(Sn.shape)
+        print(Sp.shape)
+        print(Cn.shape)
+        print(Cp.shape)
+        
+        save_image(Sn, os.path.join('./results/train', str(epoch) + 'Sn.jpg'))
+        save_image(Sp, os.path.join('./results/train', str(epoch) + 'Sp.jpg'))
+        save_image(Cn, os.path.join('./results/train', str(epoch) + 'Cn.jpg'))
+        save_image(Cp, os.path.join('./results/train', str(epoch) + 'Cp.jpg'))
+        
+        exit(0)
+        
         optimizer_G.zero_grad()
         
         EIp = feature_extractor(Sp)

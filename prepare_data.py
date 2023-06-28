@@ -1,5 +1,5 @@
 import torch
-import os
+import os, shutil
 import h5py
 import cv2
 from args import args
@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 from controlnet_aux import LineartDetector
 from matplotlib import pyplot as plt
+from tqdm import tqdm
 
 from diffusers import (
     ControlNetModel,
@@ -16,124 +17,56 @@ from diffusers import (
     UniPCMultistepScheduler,
 )
 
-# def prepare_data(args, stride, width, model=None):
-#     """Extract frames from a video and save them as JPG files."""
-#     if not os.path.exists('./dataset/shot0'):
-#         os.makedirs('./dataset/shot0')
-
-#     video = cv2.VideoCapture(args.video_dir)
+def prepare_h5(args):
+    '''
+    https://huggingface.co/lllyasviel/control_v11p_sd15_lineart
+    CAUTION WITH RAM CAPACITY !!!
+    '''
+    processor = LineartDetector.from_pretrained("./models/lineart_anime")
     
-#     frame_pairs = []
-#     frame_count = 0
-#     frame_pre_count = 0
-#     while True:
-#         ret, frame = video.read()
-#         frame_count += 1
-#         if not ret: 
-#             break
-        
-#         pairs = {'Sn':None, 'Sp': None, 'Cn': None, 'Cp': None}
-#         if frame_count % stride == 0:
-#             pairs['Cp'] = frame
-#             frame_pre_count = frame_count
-#         if frame_count - frame_pre_count == width:
-#             pairs['Cn'] = frame
-#             frame_pre_count = frame_count
-#         if pairs['Cp'] is not None and pairs['Cn'] is not None:
-#             frame_pairs.append(pairs)
-#     video.release()
+    save_dir = os.path.join(args.dataset_root, 'h5')
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
     
-#     for pair in frame_pairs:
-#         pair['Sn'] = model(pair['Cn']).cpu().detach().numpy()[0]
-#         pair['Sp'] = model(pair['Cp']).cpu().detach().numpy()[0]
-#     # TODO: add model and set monitor
-    
-#     with h5py.File(os.path.join('./dataset/shot0', 'pairs.h5'), 'w') as hf:
-#         for i, pair in enumerate(frame_pairs):
-#             hf.create_dataset(f'{i}', data=pair)
-
-def prepare_data(args, stride=0, width=0):
-    def extract_frames(args):
-        videolist = os.listdir(args.video_root)
-        for videoname in videolist:
-            if not os.path.exists(os.path.join('./dataset', videoname.split('.')[0])):
-                os.makedirs(os.path.join('./dataset', videoname.split('.')[0]))
-            video = cv2.VideoCapture(os.path.join(args.video_root, videoname))
-
-            frame_count = 0
-            while True:
-                ret, frame = video.read()
-                if ret is False: 
-                    print(f'video {os.path.join(args.video_root, videoname)} break')
-                    break
-                frame = frame[:, 246:1672]  # cropping
-                frame_name = os.path.join('./dataset', videoname.split('.')[0]) + '/' + '3-' + str(frame_count).zfill(4) + '.jpg'
-                cv2.imwrite(frame_name, frame)
-                frame_count += 1
-            video.release()
-    
-    def convert():
-        '''
-        https://huggingface.co/lllyasviel/control_v11p_sd15_lineart
-        '''
-        processor = LineartDetector.from_pretrained("./models/lineart_anime")
-        
-        for root, dirs, files in os.walk('./dataset'):
-            if len(files) > 0 and files[0].endswith('jpg'):
-                for file in files:
-                    if file.startswith('3-'):
-                        image = cv2.imread(os.path.join(root, file))
-                        # image = cv2.resize(image, (200, 150))   # cv2: array: W H C, adjust resolution for model
-                        
-                        control_image = processor(image)
-                        control_image.save(os.path.join(root, file).replace('3-', '1-'))
-
-    def pairing(args, stride=1, width=2):
-        for root, dirs, files in os.walk('./dataset'):
-            if len(files) > 0 and files[0].endswith('jpg'):
-                if 'pairs.h5' in files: 
-                    files.remove('pairs.h5')
+    color_previous = []
+    color_current = []
+    sketch_previous = []
+    sketch_current = []
+    h5_file_counter = 0
+    save_gap = 1000
+    for root, dirs, files in os.walk(args.shots_root):
+        print(f"{len(files)} files found.")
+        for i, file in tqdm(enumerate(files), total=len(files)):
+            if file.endswith('jpg'):
+                concate_image = cv2.imread(os.path.join(root, file))    # cv2: array: H W C, adjust resolution for model
+                left_img = concate_image[:, :concate_image.shape[1]//2, :]
+                right_img = concate_image[:, concate_image.shape[1]//2:, :]
                 
-                C_images = []
-                S_images = []
-
-                files = sorted(files, key=lambda f: int(f.strip('.jpg').split('-')[-1]))
-                for file in files:
-                    if file.endswith('jpg'):
-                        if file.startswith('3-'):
-                            C_images.append(cv2.imread(os.path.join(root, file)))
-                        elif file.startswith('1-'):
-                            S_images.append(cv2.imread(os.path.join(root, file), cv2.IMREAD_GRAYSCALE))
-                assert len(C_images) == len(S_images)
-                print(files)
+                left_img = cv2.resize(left_img, (256, 192)) # W, H
+                right_img = cv2.resize(right_img, (256, 192))
                 
-                frame_pairs = []
-                assert width <= len(C_images)
-                for frame_count in range(width - 1, len(C_images), stride):
-                    pair = {'Sn':None, 'Sp': None, 'Cn': None, 'Cp': None}
-                    pair['Cp'] = C_images[frame_count - width + 1]
-                    pair['Sp'] = S_images[frame_count - width + 1][:, :, None]
-                    pair['Cn'] = C_images[frame_count]
-                    pair['Sn'] = S_images[frame_count][:, :, None]
-                    frame_pairs.append(pair)
-                    
-                print(len(frame_pairs))
-                with h5py.File(os.path.join(root, 'pairs.h5'), 'w') as hf:
-                    for i, pair in enumerate(frame_pairs):
-                        hf.create_dataset(f'{i}_Cp', data=pair['Cp'])
-                        hf.create_dataset(f'{i}_Sp', data=pair['Sp'])
-                        hf.create_dataset(f'{i}_Cn', data=pair['Cn'])
-                        hf.create_dataset(f'{i}_Sn', data=pair['Sn'])
-                    
+                left_sketch = processor(left_img, detect_resolution=192, image_resolution=192, return_pil=False)
+                right_skecth = processor(right_img, detect_resolution=192, image_resolution=192, return_pil=False)
+                
+                color_previous.append(left_img)
+                color_current.append(right_img)
+                sketch_previous.append(left_sketch[0][None, ...])   # 3to1 channel
+                sketch_current.append(right_skecth[0][None, ...])
             
-    # print("Extracting frames======================>")
-    # extract_frames(args)
-    # print("Converting======================>")
-    # convert()
-    print("Paring======================>")
-    pairing(args)
-    print("All Done!======================>")
-    
+            if (i+1) % save_gap == 0 or i == len(files) - 1:
+                h5_file_counter += 1
+                with h5py.File(os.path.join(save_dir, f'pairs{h5_file_counter}_{i+1}.h5'), 'w') as hf:
+                    for j in range(len(color_previous)):
+                        hf.create_dataset(f'{j}_Cp', data=color_previous[j])
+                        hf.create_dataset(f'{j}_Cn', data=color_current[j])
+                        hf.create_dataset(f'{j}_Sp', data=sketch_previous[j])
+                        hf.create_dataset(f'{j}_Sn', data=sketch_current[j])
+                    color_previous = []
+                    color_current = []
+                    sketch_previous = []
+                    sketch_current = []
+                print(f"\nh5 file has been saved to {os.path.join(save_dir, f'pairs_{h5_file_counter}_{len(color_previous)}.h5')}.")
+    print("All Done.")
 
 if __name__ == '__main__':
-    prepare_data(args)
+    prepare_h5(args)
