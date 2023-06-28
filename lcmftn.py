@@ -50,22 +50,11 @@ print("Data Loaded====================>")
 ###### Training ######
 for epoch in tqdm(range(args.start_epoch, args.end_epoch + 1)):
     for i, batch in enumerate(train_loader):
-        print(batch['Sn'].shape)
-        print(batch['Sp'].shape)
-        print(batch['Cn'].shape)
-        print(batch['Cp'].shape)
         
         Sn = Variable(Input_S.copy_(batch['Sn'])).to(DEVICE)
         Sp = Variable(Input_S.copy_(batch['Sp'])).to(DEVICE)
         Cn = Variable(Input_C.copy_(batch['Cn'])).to(DEVICE)
         Cp = Variable(Input_C.copy_(batch['Cp'])).to(DEVICE)
-        
-        save_image(Sn, os.path.join('./results/train', str(epoch) + 'Sn.jpg'))
-        save_image(Sp, os.path.join('./results/train', str(epoch) + 'Sp.jpg'))
-        save_image(Cn, os.path.join('./results/train', str(epoch) + 'Cn.jpg'))
-        save_image(Cp, os.path.join('./results/train', str(epoch) + 'Cp.jpg'))
-        
-        exit(0)
         
         optimizer_G.zero_grad()
         
