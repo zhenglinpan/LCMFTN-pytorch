@@ -16,8 +16,8 @@ from utils import LambdaLR
 
 from tqdm import tqdm
 
-import wandb
-wandb.init(project="LCMFTN")
+# import wandb
+# wandb.init(project="LCMFTN")
 
 DEVICE = 0
 
@@ -50,15 +50,15 @@ print("Data Loaded====================>")
 ###### Training ######
 for epoch in tqdm(range(args.start_epoch, args.end_epoch + 1)):
     for i, batch in enumerate(train_loader):
+        print(batch['Sn'].shape)
+        print(batch['Sp'].shape)
+        print(batch['Cn'].shape)
+        print(batch['Cp'].shape)
+        
         Sn = Variable(Input_S.copy_(batch['Sn'])).to(DEVICE)
         Sp = Variable(Input_S.copy_(batch['Sp'])).to(DEVICE)
         Cn = Variable(Input_C.copy_(batch['Cn'])).to(DEVICE)
         Cp = Variable(Input_C.copy_(batch['Cp'])).to(DEVICE)
-        
-        print(Sn.shape)
-        print(Sp.shape)
-        print(Cn.shape)
-        print(Cp.shape)
         
         save_image(Sn, os.path.join('./results/train', str(epoch) + 'Sn.jpg'))
         save_image(Sp, os.path.join('./results/train', str(epoch) + 'Sp.jpg'))
@@ -84,7 +84,7 @@ for epoch in tqdm(range(args.start_epoch, args.end_epoch + 1)):
         
         loss = color_loss + perceptual_loss
         
-        wandb.log({"color_loss": color_loss.item(), "perceptual_loss": loss.item()})
+        # wandb.log({"color_loss": color_loss.item(), "perceptual_loss": loss.item()})
         
         loss.backward()
         optimizer_G.step()

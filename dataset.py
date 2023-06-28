@@ -8,6 +8,8 @@ from glob import glob
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 
+from matplotlib import pyplot as plt
+
 class AnimeDataset(Dataset):
     def __init__(self, args, trans=None):
         super(AnimeDataset).__init__()
@@ -21,9 +23,9 @@ class AnimeDataset(Dataset):
                 for i in range(len(list(hf.keys())) // 4):
                     pairs.append({'Sn': np.array(hf[f'{i}_Sn']).astype(np.uint8), 
                                   'Sp': np.array(hf[f'{i}_Sp']).astype(np.uint8), 
-                                  'Cn': np.array(hf[f'{i}_Cn']).astype(np.uint8)[[2,1,0], ...], # RGB-BGR since opencv used
-                                  'Cp': np.array(hf[f'{i}_Cp']).astype(np.uint8)[[2,1,0], ...]})
-
+                                  'Cn': np.array(hf[f'{i}_Cn']).astype(np.uint8)[..., [2,1,0]], # RGB-BGR since opencv used
+                                  'Cp': np.array(hf[f'{i}_Cp']).astype(np.uint8)[..., [2,1,0]]})
+        
         print(f'{len(pairs)} pairs founded.')
         self.pairs = pairs
     

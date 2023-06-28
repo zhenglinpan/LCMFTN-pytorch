@@ -50,8 +50,8 @@ def prepare_h5(args):
                 
                 color_previous.append(left_img)
                 color_current.append(right_img)
-                sketch_previous.append(left_sketch[0][None, ...])   # 3to1 channel
-                sketch_current.append(right_skecth[0][None, ...])
+                sketch_previous.append(left_sketch[..., 0][..., None])   # 3to1 channel
+                sketch_current.append(right_skecth[..., 0][..., None])
             
             if (i+1) % save_gap == 0 or i == len(files) - 1:
                 h5_file_counter += 1
