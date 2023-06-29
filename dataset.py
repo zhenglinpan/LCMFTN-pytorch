@@ -21,8 +21,8 @@ class AnimeDataset(Dataset):
         for h5_f in h5_files:
             with h5py.File(h5_f, 'r') as hf:
                 for i in range(len(list(hf.keys())) // 4):
-                    pairs.append({'Sn': np.array(hf[f'{i}_Sn']).astype(np.uint8), 
-                                  'Sp': np.array(hf[f'{i}_Sp']).astype(np.uint8), 
+                    pairs.append({'Sn': 255 - np.array(hf[f'{i}_Sn']).astype(np.uint8),     # invert to white background
+                                  'Sp': 255 - np.array(hf[f'{i}_Sp']).astype(np.uint8), 
                                   'Cn': np.array(hf[f'{i}_Cn']).astype(np.uint8)[..., [2,1,0]], # RGB-BGR since opencv used
                                   'Cp': np.array(hf[f'{i}_Cp']).astype(np.uint8)[..., [2,1,0]]})
         

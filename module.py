@@ -87,11 +87,11 @@ class ResNeXtBlock(nn.Module):
         nc_hidden = 32
         # nc_hidden = nc_in // 2
         self.conv_in = nn.Sequential(nn.Conv2d(nc_in, nc_hidden, 1),
-                                     nn.BatchNorm2d(nc_hidden),
                                      nn.ReLU(1))
-        self.bottleneck = nn.Sequential(nn.Conv2d(nc_hidden, nc_hidden, 3, 1, 1, groups=cardinality))
-        self.conv_out = nn.Sequential(nn.Conv2d(nc_hidden, nc_out, 1),
-                                      nn.BatchNorm2d(nc_out))
+        self.bottleneck = nn.Sequential(nn.Conv2d(nc_hidden, nc_hidden, 3, 1, 1, groups=cardinality), 
+                                        nn.ReLU(1))
+        self.conv_out = nn.Sequential(nn.Conv2d(nc_hidden, nc_out, 1), 
+                                      nn.ReLU(1))
         
     def forward(self, x):
         x1 = self.conv_in(x)
@@ -110,20 +110,20 @@ class ESPCN(nn.Module):
         self.nc_out = nc_out
         self.upscale_factor = upscale_factor
         
-        conv = [nn.Conv2d(self.nc_in, 64, 5, 1, 2),
-                nn.ReLU(1),
-                nn.Conv2d(64, 32, 3, 1, 1),
-                nn.ReLU(1)]
+        # conv = [nn.Conv2d(self.nc_in, 64, 5, 1, 2),
+        #         nn.ReLU(1),
+        #         nn.Conv2d(64, 32, 3, 1, 1),
+        #         nn.ReLU(1)]
         
-        subpixel_conv = [nn.Conv2d(32, int(self.nc_out * (self.upscale_factor ** 2)), 3, 1, 1),
+        subpixel_conv = [nn.Conv2d(self.nc_in, int(self.nc_out * (self.upscale_factor ** 2)), 3, 1, 1),
                          nn.ReLU(1),
                          nn.PixelShuffle(upscale_factor)]
         
-        self.conv = nn.Sequential(*conv)
+        # self.conv = nn.Sequential(*conv)
         self.subpixel_conv = nn.Sequential(*subpixel_conv)
 
     def forward(self, x):
-        x = self.conv(x)
+        # x = self.conv(x)
         x = self.subpixel_conv(x)
         # x = torch.clamp_(x, 0.0, 1.0)
         return x
@@ -137,7 +137,7 @@ class CMFT(nn.Module):
         assert fxA.shape == fyA.shape == fyB.shape
         N, C, H, W = fxA.shape[:]
         CA = torch.exp(fxA.view(N, C, H*W, 1) @ fyA.view(N, C, 1, H*W))
-        X = CA @ fyB.view(N, C, H*W, 1)
+        X = CA @ fyB.view(N, C, H*W, 1) / torch.sum(CA, dim=3).view(N, C, H*W, 1)
         X = X.view(N, C, H, W)
         return X
 
@@ -148,16 +148,12 @@ class Eh(nn.Module):
         self.nc_in = nc_in
         
         self.conv1 = nn.Sequential(nn.Conv2d(self.nc_in, 64, 7, 1, 3), 
-                                   nn.BatchNorm2d(64), 
                                    nn.ReLU(1))
         self.conv2 = nn.Sequential(nn.Conv2d(64, 128, 4, 2, 1), 
-                                   nn.BatchNorm2d(128), 
                                    nn.ReLU(1))
         self.conv3 = nn.Sequential(nn.Conv2d(128, 256, 4, 2, 1), 
-                                   nn.BatchNorm2d(256), 
                                    nn.ReLU(1))
         self.conv4 = nn.Sequential(nn.Conv2d(256, 512, 4, 2, 1), 
-                                   nn.BatchNorm2d(512), 
                                    nn.ReLU(1))
         
     def forward(self, x):
@@ -174,16 +170,12 @@ class Ec(nn.Module):
         self.nc_in = nc_in
         
         self.conv1 = nn.Sequential(nn.Conv2d(self.nc_in, 64, 7, 1, 3), 
-                                   nn.BatchNorm2d(64), 
                                    nn.ReLU(1))
         self.conv2 = nn.Sequential(nn.Conv2d(64, 128, 4, 2, 1), 
-                                   nn.BatchNorm2d(128), 
                                    nn.ReLU(1))
         self.conv3 = nn.Sequential(nn.Conv2d(128, 256, 4, 2, 1), 
-                                   nn.BatchNorm2d(256), 
                                    nn.ReLU(1))
         self.conv4 = nn.Sequential(nn.Conv2d(256, 512, 4, 2, 1), 
-                                   nn.BatchNorm2d(512), 
                                    nn.ReLU(1))
         
     def forward(self, x):
@@ -200,22 +192,16 @@ class Es(nn.Module):
         self.nc_in = nc_in
         
         self.conv1 = nn.Sequential(nn.Conv2d(self.nc_in, 64, 7, 1, 3), 
-                                   nn.BatchNorm2d(64), 
                                    nn.ReLU(1))
         self.conv2 = nn.Sequential(nn.Conv2d(64, 128, 4, 2, 6, dilation=4), # dilation: ⌊(W-F'+2*P)/S⌋+1  F'=F+(D-1)(F-1)
-                                   nn.BatchNorm2d(128), 
                                    nn.ReLU(1))
         self.conv3 = nn.Sequential(nn.Conv2d(128, 256, 4, 2, 12, dilation=8), 
-                                   nn.BatchNorm2d(256), 
                                    nn.ReLU(1))
         self.conv4 = nn.Sequential(nn.Conv2d(256, 512, 4, 2, 12, dilation=8), 
-                                   nn.BatchNorm2d(512), 
                                    nn.ReLU(1))
         self.conv5 = nn.Sequential(nn.Conv2d(512, 512, 3, 1, 1), 
-                                   nn.BatchNorm2d(512), 
                                    nn.ReLU(1))
         self.conv6 = nn.Sequential(nn.Conv2d(512, 512, 3, 1, 1),
-                                   nn.BatchNorm2d(512),
                                    nn.ReLU(1))
         
     def forward(self, x):
@@ -235,14 +221,12 @@ class EI(nn.Module):
         self.nc_in = nc_in
         
         model = [nn.Conv2d(self.nc_in, 64, 7, 1, 3),
-                 nn.BatchNorm2d(64),
                  nn.ReLU(1)]
         
         in_features = 64
         out_features = in_features * 2
         for _ in range(3):
             model += [nn.Conv2d(in_features, out_features, 4, 2, 1),
-                      nn.BatchNorm2d(out_features),
                       nn.LeakyReLU(0.2, 1)]
             in_features = out_features
             out_features = in_features * 2
