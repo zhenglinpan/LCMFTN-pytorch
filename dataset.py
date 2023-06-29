@@ -17,7 +17,7 @@ class AnimeDataset(Dataset):
         
         pairs = []
         h5_root = os.path.join(args.dataset_root, 'h5')
-        h5_files = glob(h5_root + '/*.h5')
+        h5_files = glob(h5_root + '/*.h5')[:1]      # only use 1000 pairs
         for h5_f in h5_files:
             with h5py.File(h5_f, 'r') as hf:
                 for i in range(len(list(hf.keys())) // 4):

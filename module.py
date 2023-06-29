@@ -15,7 +15,7 @@ class LCMFTNGenerator(nn.Module):
         self.CMFT0 = CMFT()  # TODO: CMFT don't need grad
         self.CMFT1 = CMFT()
         self.CMFT2 = CMFT()
-        self.CMFT3 = CMFT()
+        # self.CMFT3 = CMFT()   # skipped as per paper
         self.cat = cat()
         
         self.conv_out = nn.Sequential(nn.Conv2d(64, args.c_channel, 1))
@@ -47,7 +47,7 @@ class LCMFTNGenerator(nn.Module):
         # print("5")
         x = self.RU2(self.cat(x, Eh2))
         # print("6")
-        x = self.CMFT3(self.cat(x, Es3n), self.cat(Ec3, Es3p), Ec3)
+        # x = self.CMFT3(self.cat(x, Es3n), self.cat(Ec3, Es3p), Ec3)
         # print("7")
         x = self.conv_out(self.cat(x, Eh3))
         # print("8")

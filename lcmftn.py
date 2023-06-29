@@ -33,7 +33,7 @@ generator.apply(weights_init_normal)
 criterion_color = torch.nn.L1Loss()
 criterion_MSE = torch.nn.MSELoss()
 
-optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr, betas=(0.5, 0.999))
+optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr, betas=(0.5, 0.9))
 lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(optimizer_G, lr_lambda=LambdaLR(args.end_epoch, args.start_epoch, args.decay_epoch).step)
 
 Tensor = torch.cuda.FloatTensor
@@ -67,11 +67,13 @@ for epoch in tqdm(range(args.start_epoch, args.end_epoch + 1)):
         
         fms_real = discriminator(Cn)
         fms_fake = discriminator(pred_Cn)
+        
         perceptual_loss = criterion_MSE(fms_real[0], fms_fake[0])
         for i in range(1, len(fms_real)):
             perceptual_loss += criterion_MSE(fms_real[i], fms_fake[i])
         
-        loss = color_loss + perceptual_loss
+        lambda1, lambda2 = 10, 2e-2
+        loss = color_loss * lambda1 + perceptual_loss * lambda1
         
         # wandb.log({"color_loss": color_loss.item(), "perceptual_loss": loss.item()})
         
