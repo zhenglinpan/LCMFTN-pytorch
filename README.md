@@ -15,7 +15,7 @@ to train and test your own model.
 </p>
 
 ## Dataset
-You need tp prepare your own dataset. In my dataset, 1k pairs were engaged, stride=6, width=12. 
+You need tp prepare your own dataset. In my dataset, 1k pairs were engaged, stride=6, width=12. RTX 3060 Laptop(6G) was used for experimental training. 
 
 ## Modification
 
