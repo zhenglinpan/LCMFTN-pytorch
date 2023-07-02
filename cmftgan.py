@@ -10,23 +10,20 @@ from args import args
 from dataset import AnimeDataset
 from torch.utils.data import DataLoader
 
-from module import LCMFTNGenerator, EI, VGGDiscriminator
+from module import CMFTGAN, CMFTDiscriminator, VGGDiscriminator
 from utils import weights_init_normal
 from utils import LambdaLR
 
 from tqdm import tqdm
 
 import wandb
-wandb.init(project="LCMFTN")
+wandb.init(project="CMFTGAN")
 
 DEVICE = 0
 
-generator = LCMFTNGenerator(args).to(DEVICE)
-feature_extractor = EI(nc_in=1).to(DEVICE)
-discriminator = VGGDiscriminator().to(DEVICE)
-
-feature_extractor.eval()
-discriminator.eval()
+generator = CMFTGAN(nc_in=args.c_channel, nc_out=args.c_channel).to(DEVICE)
+discriminator = CMFTDiscriminator().to(DEVICE)
+feature_extractor = VGGDiscriminator().to(DEVICE)
 
 generator.apply(weights_init_normal)
 
@@ -55,15 +52,10 @@ for epoch in tqdm(range(args.start_epoch, args.end_epoch + 1)):
         Sp = Variable(Input_S.copy_(batch['Sp'])).to(DEVICE)
         Cn = Variable(Input_C.copy_(batch['Cn'])).to(DEVICE)
         Cp = Variable(Input_C.copy_(batch['Cp'])).to(DEVICE)
-
+        
         optimizer_G.zero_grad()
         
-        EIp = feature_extractor(Sp)
-        EIn = feature_extractor(Sn)
-        
-        pred_Cn = generator(Sn, Sp, Cp, EIp.detach(), EIn.detach())
-        # if torch.isnan(pred_Cn[0, 0, 0, 0]):
-        #     raise Exception("Nan encountered in prediction of Cn.")
+        CA = generator()
         
         color_loss = criterion_color(Cn, pred_Cn)
         
@@ -90,6 +82,8 @@ for epoch in tqdm(range(args.start_epoch, args.end_epoch + 1)):
         save_image(Cn, os.path.join('./results/train', str(epoch) + '_Cn.jpg'))
         save_image(Cp, os.path.join('./results/train', str(epoch) + '_Cp.jpg'))
         save_image(pred_Cn, os.path.join('./results/train', str(epoch) + '_pred_Cn.jpg'))
+
+    # exit(0)
     
     if epoch % 10 == 0:
         torch.save(generator.state_dict(), args.models_root + '/' + str(epoch) + '_generator.pth')

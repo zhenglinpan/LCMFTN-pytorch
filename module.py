@@ -12,7 +12,7 @@ class LCMFTNGenerator(nn.Module):
         self.RU0 = RU(512, 256, 20)
         self.RU1 = RU(256, 128, 10)
         self.RU2 = RU(128, 64, 10)
-        self.CMFT0 = CMFT()  # TODO: CMFT don't need grad
+        self.CMFT0 = CMFT()
         self.CMFT1 = CMFT()
         self.CMFT2 = CMFT()
         # self.CMFT3 = CMFT()   # skipped as per paper
@@ -37,7 +37,6 @@ class LCMFTNGenerator(nn.Module):
         x = self.CMFT0(self.cat(EIn, Es0n), self.cat(EIp, Es0p), Ec0)
         # print("1")
         x = self.RU0(self.cat(x, Eh0))
-        # print('x', x.shape)
         # print("2")
         x = self.CMFT1(self.cat(x, Es1n), self.cat(Ec1, Es1p), Ec1)
         # print("3")
@@ -50,7 +49,6 @@ class LCMFTNGenerator(nn.Module):
         # x = self.CMFT3(self.cat(x, Es3n), self.cat(Ec3, Es3p), Ec3)
         # print("7")
         x = self.conv_out(self.cat(x, Eh3))
-        # print("8")
         return x
 
 class cat():
@@ -69,8 +67,9 @@ class RU(nn.Module):
         super(RU, self).__init__()
         self.nc_in = nc_in
         self.nc_out = nc_out
-        
-        model = [ResNeXtBlock(nc_in, nc_in) for _ in range(res_n)] + [ESPCN(nc_in, nc_out)]
+
+        # model = [ResNeXtBlock(nc_in, nc_in) for _ in range(res_n)] + [ESPCN(nc_in, nc_out)]
+        model = [ResNetBlock(nc_in, nc_in) for _ in range(res_n)] + [ESPCN(nc_in, nc_out)]
         self.model = nn.Sequential(*model)
     
     def forward(self, x):
@@ -87,17 +86,58 @@ class ResNeXtBlock(nn.Module):
         nc_hidden = 32
         # nc_hidden = nc_in // 2
         self.conv_in = nn.Sequential(nn.Conv2d(nc_in, nc_hidden, 1),
+                                     nn.BatchNorm2d(nc_hidden),
                                      nn.ReLU(1))
         self.bottleneck = nn.Sequential(nn.Conv2d(nc_hidden, nc_hidden, 3, 1, 1, groups=cardinality), 
+                                        nn.BatchNorm2d(nc_hidden),
                                         nn.ReLU(1))
         self.conv_out = nn.Sequential(nn.Conv2d(nc_hidden, nc_out, 1), 
+                                      nn.BatchNorm2d(nc_out),
                                       nn.ReLU(1))
+        self.relu = nn.ReLU(inplace=True)
         
     def forward(self, x):
         x1 = self.conv_in(x)
         x2 = self.bottleneck(x1)
         x3 = self.conv_out(x2)
-        return x + x3
+        return self.relu(x + x3)
+
+
+class ResNetBlock(nn.Module):
+    def __init__(self, nc_in, nc_out):
+        super(ResNetBlock, self).__init__()
+
+        self.conv1 = nn.Conv2d(nc_in, 64, 3, 1, 1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.conv2 = nn.Conv2d(64, 64, 3, 1, 1)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.conv3 = nn.Conv2d(64, nc_out, 3, 1, 1)
+        self.bn3 = nn.BatchNorm2d(nc_out)
+        self.relu = nn.ReLU(inplace=True)
+
+        self.shortcut = nn.Sequential(
+            nn.Conv2d(nc_in, nc_out, 3, 1, 1),
+            nn.BatchNorm2d(nc_out)
+        )
+
+    def forward(self, x):
+        identity = x
+
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.relu(x)
+
+        x = self.conv3(x)
+        x = self.bn3(x)
+
+        x += self.shortcut(identity)
+        x = self.relu(x)
+
+        return x
 
 
 class ESPCN(nn.Module):
@@ -251,3 +291,44 @@ class VGGDiscriminator(nn.Module):
             if i in self.index:
                 xs.append(x)
         return xs
+
+
+class CMFTGAN(nn.Module):
+    def __init__(self, nc_in, nc_out, nf=64, res_block=9):
+        super(CMFTGAN, self).__init__()
+        
+        self.conv_in = nn.Sequential(nn.Conv2d(nc_in * 2, nf, 3, 1, 1),
+                                     nn.ReLU(1))
+        self.resblocks = nn.Sequential(*[ResNetBlock(nf, nf) for _ in range(res_block)])
+        self.conv_out = nn.Sequential(nn.Conv2d(nf, nc_out, 3, 1, 1))
+        
+    def forward(self, fx, fy):
+        concat = torch.cat((fx, fy), dim=1)
+        x = self.conv_in(concat)
+        x = self.resblocks(x)
+        x = self.conv_out(x)
+        
+        return x
+
+
+class CMFTDiscriminator(nn.Module):
+    def __init__(self, nc_in):
+        super(CMFTDiscriminator, self).__init__()
+        
+        model = []
+        
+        in_feature = nc_in
+        out_feature = in_feature * 2
+        for _ in range(3):
+            model += [nn.Conv2d(in_feature, out_feature, 3, 1, 1),
+                      nn.BatchNorm2d(out_feature),
+                      nn.LeakyReLU(0.2, 1)]
+            in_feature = out_feature
+            out_feature = in_feature * 2
+        
+        model += [nn.Conv2d(in_feature, nc_in, 3, 1, 1)]
+        
+        self.model = nn.Sequential(*model)
+        
+    def forward(self, x):
+        return self.model(x)
