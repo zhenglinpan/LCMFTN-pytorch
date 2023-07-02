@@ -26,7 +26,7 @@ Although the researcher promoted the cons of resnext, I found that the network o
 Illustration2Vec in the paper, denoted as $E_{I}$, was published in 2015 and uses caffe model, it is outdated. since $E_{I}$ plays as a feature extractor, so I replace it with a CNN model(not pretrained).
 
 ### Replacing pretrained LetNet work with ControlNet lineart processor
-To generate lineart from color frames, LetNet was adopted by the researchers. Again, the model is washed-out a bit and is not easy to be accessed. Therefore I replaced LetNet with [lineart processor](https://huggingface.co/ControlNet-1-1-preview/control_v11p_sd15_lineart) used in ControlNet project. It generates similar sketches.
+To generate lineart from color frames, LetNet was adopted by the researchers. Again, the model is washed-out a bit and is not easy to access. Therefore I replaced LetNet with [lineart processor](https://huggingface.co/ControlNet-1-1-preview/control_v11p_sd15_lineart) used in ControlNet project. It generates similar sketches.
 
 ## Discussion
 ### using '+' as concatenation in CMFT's input
