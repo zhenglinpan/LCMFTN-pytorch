@@ -15,7 +15,7 @@ to train and test your own model.
 </p>
 
 ## Dataset
-You need prepare your own dataset.
+You need tp prepare your own dataset. In my dataset, 1k pairs were engaged, stride=6, width=12. 
 
 ## Modification
 
@@ -39,8 +39,8 @@ When I was checking the reasons for my bad outputs, I noticed CMFT model, the ke
 ### GPU consumption
 Follow with the parameters provided in the paper, there are some 20 million parameters in the model, which is acceptable, but CUDA OUT OF MEMORY will be triggered on RTX 3090 (24G) if you start training.
 
-*@Paper Author: Qian Zhang, Bo Wang, Wei Wen, Hai Li, Junhui Liu*
-
 *@Implementation by [Zhenglin](https://github.com/ZhenglinPan)*
+
+*@Paper Author: Qian Zhang, Bo Wang, Wei Wen, Hai Li, Junhui Liu*
 
 *@Date: July 2, 2023*
