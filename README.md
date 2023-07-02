@@ -8,11 +8,11 @@ Before anything, you need to know although I've done most of the coding, I could
 python lcmftn.py
 ```
 
+to train and test your own model.
+
 <p align="center">
   <img src="https://github.com/ZhenglinPan/LCMFTN-pytorch/blob/master/others/results.png" width="300" alt="accessibility text">
 </p>
-
-to train and test your own model.
 
 ## Dataset
 You need prepare your own dataset.
