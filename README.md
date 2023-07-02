@@ -8,8 +8,8 @@ Before anything, you need to know although I've done most of the coding, I could
 python lcmftn.py
 ```
 
-<p align="left">
-  <img src="https://github.com/ZhenglinPan/ZhenglinPan/blob/main/resources/kirby-kirby-line-sticker.gif" width="150" alt="accessibility text">
+<p align="center">
+  <img src="https://github.com/ZhenglinPan/LCMFTN-pytorch/blob/master/others/results.png" width="300" alt="accessibility text">
 </p>
 
 to train and test your own model.
@@ -25,7 +25,7 @@ The paper didn't mentioned but I noticed that the normal concatenation is not su
 Illustration2Vec in the paper, denoted as $E_{I}$, is published in 2015 and uses caffe model, it is outdated. since $E_{I}$ plays as a feature extractor, so I replace it with a CNN model(not pretrained).
 
 ### Replacing pretrained LetNet work with ControlNet lineart processor
-To generate lineart from color frames, LetNet was adopted by the researchers. Again, the model is washed-out a bit and is not easy to be accessed. Therefore I replaced LetNet with lineart processor used in ControlNet project. It generates similar sketches.
+To generate lineart from color frames, LetNet was adopted by the researchers. Again, the model is washed-out a bit and is not easy to be accessed. Therefore I replaced LetNet with [lineart processor](https://huggingface.co/ControlNet-1-1-preview/control_v11p_sd15_lineart) used in ControlNet project. It generates similar sketches.
 
 ### Problematic CMFT
 Yes, Correlation Matching Feature Transfer(CMFT) model might be wrong.
