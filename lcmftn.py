@@ -10,7 +10,7 @@ from args import args
 from dataset import AnimeDataset
 from torch.utils.data import DataLoader
 
-from module import LCMFTNGenerator, EI, VGGDiscriminator
+from network import LCMFTNGenerator, EI, VGGDiscriminator
 from utils import weights_init_normal
 from utils import LambdaLR
 
