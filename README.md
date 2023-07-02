@@ -11,7 +11,7 @@ python lcmftn.py
 to train and test your own model.
 
 <p align="center">
-  <img src="https://github.com/ZhenglinPan/LCMFTN-pytorch/blob/master/others/results.png" width="300" alt="accessibility text">
+  <img src="https://github.com/ZhenglinPan/LCMFTN-pytorch/blob/master/others/results.png" width="600" alt="accessibility text">
 </p>
 
 ## Dataset
